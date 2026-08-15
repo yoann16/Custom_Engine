@@ -46,7 +46,11 @@ if(ENGINE_ENABLE_DX12)
 endif()
 
 # ---------------------------------------------------------------------------
-# Sous-dossiers : include/ liste les headers, src/ definit la cible
+# Sous-dossiers : shaders/ compile le GLSL, include/ liste les headers,
+# src/ definit la cible
 # ---------------------------------------------------------------------------
+if(ENGINE_ENABLE_VULKAN)
+    add_subdirectory(shaders)
+endif()
 add_subdirectory(include)
 add_subdirectory(src)
