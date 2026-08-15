@@ -10,6 +10,13 @@ set(ENGINE_SOURCES
 
 add_executable(Custom_Engine ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
+# Force le repertoire de travail du debogueur VS a la racine du projet,
+# pour que les chemins relatifs comme "shaders/slang.spv" fonctionnent
+# aussi bien via F5 dans Visual Studio qu'en ligne de commande.
+set_target_properties(Custom_Engine PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
+
 target_include_directories(Custom_Engine PRIVATE
     ${CMAKE_SOURCE_DIR}/include
 )
@@ -24,7 +31,12 @@ if(ENGINE_ENABLE_VULKAN)
         Vulkan::Vulkan
         unofficial::spirv-reflect
     )
-    target_compile_definitions(Custom_Engine PRIVATE ENGINE_USE_VULKAN)
+    target_compile_definitions(Custom_Engine PRIVATE
+        ENGINE_USE_VULKAN
+        VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+        SHADER_DIR="${CMAKE_SOURCE_DIR}/shaders"
+    )
+    add_dependencies(Custom_Engine CompileShaders)
 endif()
 
 if(ENGINE_ENABLE_DX12)
