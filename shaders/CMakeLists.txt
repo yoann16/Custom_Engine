@@ -28,3 +28,6 @@ add_custom_command(
 )
 
 add_custom_target(CompileShaders DEPENDS ${SHADERS_DIR}/slang.spv)
+
+# Remonte la liste des shaders vers le CMakeLists racine, pour affichage dans l'IDE
+set(ENGINE_SHADERS ${SHADER_SLANG_SOURCES} PARENT_SCOPE)

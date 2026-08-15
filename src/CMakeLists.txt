@@ -8,7 +8,19 @@ set(ENGINE_SOURCES
     # ${CMAKE_CURRENT_SOURCE_DIR}/Renderer.cpp
 )
 
-add_executable(Custom_Engine ${ENGINE_SOURCES} ${ENGINE_HEADERS})
+add_executable(Custom_Engine ${ENGINE_SOURCES} ${ENGINE_HEADERS} ${ENGINE_SHADERS})
+
+# Les .slang ne sont pas compiles par le compilateur C++ (ils passent par slangc
+# via CompileShaders) : on les marque comme "non compilables" pour que VS les
+# affiche sans essayer de les passer a cl.exe.
+if(ENGINE_SHADERS)
+    set_source_files_properties(${ENGINE_SHADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
+endif()
+
+# Recree dans Visual Studio une arborescence de filtres qui reflete la vraie
+# structure de dossiers sur le disque (src/, include/, shaders/), au lieu de
+# tout mettre a plat dans "Source Files".
+source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ENGINE_SOURCES} ${ENGINE_HEADERS} ${ENGINE_SHADERS})
 
 # Force le repertoire de travail du debogueur VS a la racine du projet,
 # pour que les chemins relatifs comme "shaders/slang.spv" fonctionnent
