@@ -9,6 +9,16 @@
         "CMAKE_TOOLCHAIN_FILE": "C:/Users/yoann/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows"
       }
+    },
+    {
+      "name": "windows-vs2022",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build-vs",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "C:/Users/yoann/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows"
+      }
     }
   ]
 }
