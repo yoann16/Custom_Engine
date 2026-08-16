@@ -15,9 +15,16 @@ private:
 	
 	vk::raii::Context context;
 	vk::raii::Instance instance = nullptr;
+	vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
 private:
 	void createInstance();
+	std::vector<const char*> getRequiredInstanceExtensions();
+	static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT      severity,
+														  vk::DebugUtilsMessageTypeFlagsEXT             type,
+														  const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+														  void*											pUserData);
+	void setupDebugMessenger();
 
 private:
 	void initWindow();
