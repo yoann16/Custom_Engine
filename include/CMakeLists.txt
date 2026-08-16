@@ -4,7 +4,7 @@
 # Ex : ${CMAKE_CURRENT_SOURCE_DIR}/Renderer.h
 # -----------------------------------------------------------------------------
 set(ENGINE_HEADERS
-    # ${CMAKE_CURRENT_SOURCE_DIR}/Renderer.h
-    # ${CMAKE_CURRENT_SOURCE_DIR}/Device.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/DX12.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vulkan.h
     PARENT_SCOPE
 )

@@ -5,7 +5,8 @@
 # -----------------------------------------------------------------------------
 set(ENGINE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/Renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/DX12.cpp
 )
 
 add_executable(Custom_Engine ${ENGINE_SOURCES} ${ENGINE_HEADERS} ${ENGINE_SHADERS})
