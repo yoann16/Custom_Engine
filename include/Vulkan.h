@@ -12,6 +12,12 @@ class Vulkan
 {
 private:
 	GLFWwindow* window = nullptr;
+	
+	vk::raii::Context context;
+	vk::raii::Instance instance = nullptr;
+
+private:
+	void createInstance();
 
 private:
 	void initWindow();
