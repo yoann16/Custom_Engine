@@ -17,6 +17,8 @@ private:
 	vk::raii::Instance instance = nullptr;
 	vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 	vk::raii::PhysicalDevice physicalDevice = nullptr;
+	vk::raii::Device device = nullptr;
+	vk::raii::Queue graphicsQueue = nullptr;
 
 private:
 	void createInstance();
@@ -28,6 +30,7 @@ private:
 	void setupDebugMessenger();
 	bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice);
 	void pickPhysicalDevice();
+	void createLogicalDevice();
 
 private:
 	void initWindow();

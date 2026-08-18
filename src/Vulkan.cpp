@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <map>
+#include <vector>
 
 
 const uint32_t WIDTH = 800;
@@ -221,12 +222,63 @@ void Vulkan::pickPhysicalDevice()
 		throw std::runtime_error("failed to find a suitable GPU !");
 }
 
+void Vulkan::createLogicalDevice()
+{
+	//find the index of the first queue family that supports graphics
+	std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+
+	//get the first index into queueFamilyProperties which supports graphics
+	auto graphicsQueueFamilyProperty =
+			std::ranges::find_if(queueFamilyProperties, [](auto const& qfp)
+			{
+				return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
+			});
+
+	assert(graphicsQueueFamilyProperty != queueFamilyProperties.end() && "No graphics queue family found !");
+
+	auto graphicsIndex = static_cast<uint32_t>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
+
+	// query for Vulkan 1.3 features
+	vk::StructureChain<vk::PhysicalDeviceFeatures2,
+					   vk::PhysicalDeviceVulkan11Features,
+					   vk::PhysicalDeviceVulkan13Features,
+					   vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+		featureChain =
+		{
+		{},								//vk::PhysicalDeviceFeatures2
+		{.shaderDrawParameters = true},   //vk::PhysicalDeviceVulkan11Features
+		{.dynamicRendering = true},		//vk::PhysicalDeviceVulkan13Features
+		{.extendedDynamicState = true}	//vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT
+		};
+
+	// create a device
+	float queuePriority = 0.5f;
+	vk::DeviceQueueCreateInfo deviceQueueCreateInfo
+	{
+		.queueFamilyIndex = graphicsIndex,
+		.queueCount = 1,
+		.pQueuePriorities = &queuePriority
+	};
+	vk::DeviceCreateInfo deviceCreateInfo
+	{
+		.pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
+		.queueCreateInfoCount = 1,
+		.pQueueCreateInfos = &deviceQueueCreateInfo,
+		.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtension.size()),
+		.ppEnabledExtensionNames = requiredDeviceExtension.data()
+	};
+
+	device = vk::raii::Device(physicalDevice, deviceCreateInfo);
+	graphicsQueue = vk::raii::Queue(device, graphicsIndex, 0);
+}
+
 
 void Vulkan::initVulkan()
 {
 	createInstance();
 	setupDebugMessenger();
 	pickPhysicalDevice();
+	createLogicalDevice();
 }
 
 void Vulkan::mainLoop()
