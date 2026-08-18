@@ -1,12 +1,14 @@
 #include "Vulkan.h"
 
 #include <iostream>
+#include <map>
 
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
 const std::vector<char const*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+std::vector<const char*> requiredDeviceExtension = { vk::KHRSwapchainExtensionName };
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
@@ -40,9 +42,6 @@ std::vector<char const*> Vulkan::getRequiredInstanceExtensions()
 
 	return extensions;
 }
-
-
-
 
 void Vulkan::createInstance()
 {
@@ -141,11 +140,93 @@ void Vulkan::setupDebugMessenger()
 	debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 }
 
+bool Vulkan::isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice)
+{
+	//Check if physicalDevice support geometry shaders
+	auto deviceFeatures = physicalDevice.getFeatures();
+	bool supportGeometryShaders = deviceFeatures.geometryShader;
+
+	//Check if the physicalDevice support the Vulkan 1.3 API version
+	bool supportVulkan1_3 = physicalDevice.getProperties().apiVersion >= vk::ApiVersion13;
+
+	//Check if any of the queue families support graphics operations
+	auto queueFamilies = physicalDevice.getQueueFamilyProperties();
+	bool supportsGraphics =
+			std::ranges::any_of(queueFamilies, [](auto const& qfp)
+			{
+				return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics);
+			});
+
+	//Check if all required physicalDevice extensions are available
+	auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+	bool supportsAllRequiredExtensions =
+			std::ranges::all_of(requiredDeviceExtension, [&availableDeviceExtensions](auto const& requiredDeviceExtension)
+			{
+				return std::ranges::any_of(availableDeviceExtensions, [requiredDeviceExtension](auto const& availableDeviceExtension)
+					{
+						return strcmp(availableDeviceExtension.extensionName, requiredDeviceExtension) == 0;
+					});
+			});
+
+	//Check if the physicalDevice supports the required features (shader draw parameters, dynamic rendering and extended dynamic state)
+	auto features = physicalDevice.template getFeatures2<vk::PhysicalDeviceFeatures2,
+																		vk::PhysicalDeviceVulkan11Features,
+																		vk::PhysicalDeviceVulkan13Features,
+																		vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+	bool supportsRequiredFeatures = features.template get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
+									features.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+									features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+
+	//Return true if the physicalDevice meets all the criteria
+	return supportGeometryShaders && supportVulkan1_3 && supportsGraphics && supportsAllRequiredExtensions && supportsRequiredFeatures;
+}
+
+void Vulkan::pickPhysicalDevice()
+{
+	auto physicalDevices = instance.enumeratePhysicalDevices();
+
+	if (physicalDevices.empty())
+		throw std::runtime_error("failed to find GPUs with Vulkan support !");
+	
+	//Use an ordered map to automatically sort candidates by increasing score
+	std::multimap<int, vk::raii::PhysicalDevice> candidates;
+
+	for (const auto& pd : physicalDevices)
+	{
+		auto deviceProperties = pd.getProperties();
+		
+		uint32_t score = 0;
+
+		if (!isDeviceSuitable(pd))
+			continue;
+
+		//Discrete GPUs have a significant perfomance advantage
+		if (deviceProperties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+		{
+			score += 1000;
+		}
+
+		//Maximum possible size of textures affects graphics quality
+		score += deviceProperties.limits.maxImageDimension2D;
+
+		candidates.insert(std::make_pair(score, pd));
+	}
+
+	//Check if the best candidate is suitable at all
+	if (!candidates.empty() /*&& candidates.rbegin()->first > 0*/) 
+		/**This condition is redundant with `candidates.empty`, 
+		since a GPU that supports Vulkan cannot have a score of <= 0**/
+		physicalDevice = candidates.rbegin()->second;
+	else
+		throw std::runtime_error("failed to find a suitable GPU !");
+}
+
 
 void Vulkan::initVulkan()
 {
 	createInstance();
 	setupDebugMessenger();
+	pickPhysicalDevice();
 }
 
 void Vulkan::mainLoop()
