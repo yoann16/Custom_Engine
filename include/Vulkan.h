@@ -11,11 +11,14 @@
 class Vulkan
 {
 private:
+	std::vector<const char*> requiredDeviceExtension = { vk::KHRSwapchainExtensionName };
+private:
 	GLFWwindow* window = nullptr;
 	
 	vk::raii::Context context;
 	vk::raii::Instance instance = nullptr;
 	vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
+	vk::raii::SurfaceKHR surface = nullptr;
 	vk::raii::PhysicalDevice physicalDevice = nullptr;
 	vk::raii::Device device = nullptr;
 	vk::raii::Queue graphicsQueue = nullptr;
@@ -28,6 +31,7 @@ private:
 														  const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
 														  void*											pUserData);
 	void setupDebugMessenger();
+	void createSurface();
 	bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice);
 	void pickPhysicalDevice();
 	void createLogicalDevice();

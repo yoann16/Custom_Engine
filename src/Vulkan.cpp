@@ -9,7 +9,6 @@ const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
 const std::vector<char const*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-std::vector<const char*> requiredDeviceExtension = { vk::KHRSwapchainExtensionName };
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;
@@ -141,6 +140,16 @@ void Vulkan::setupDebugMessenger()
 	debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 }
 
+void Vulkan::createSurface()
+{
+	VkSurfaceKHR _surface;
+
+	if (glfwCreateWindowSurface(*instance, window, nullptr, &_surface) != 0)
+		throw std::runtime_error("failed to create window surface !");
+
+	surface = vk::raii::SurfaceKHR(instance, _surface);
+}
+
 bool Vulkan::isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice)
 {
 	//Check if physicalDevice support geometry shaders
@@ -227,16 +236,23 @@ void Vulkan::createLogicalDevice()
 	//find the index of the first queue family that supports graphics
 	std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 
-	//get the first index into queueFamilyProperties which supports graphics
-	auto graphicsQueueFamilyProperty =
-			std::ranges::find_if(queueFamilyProperties, [](auto const& qfp)
-			{
-				return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);
-			});
+	//get the first index into queueFamilyProperties which supports both graphics and presents
+	uint32_t queueIndex = ~0;
+	for (uint32_t qfpIndex = 0; qfpIndex < queueFamilyProperties.size(); qfpIndex++)
+	{
+		if ((queueFamilyProperties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
+			physicalDevice.getSurfaceSupportKHR(qfpIndex, *surface))
+		{
+			//found a queue family that supports both graphics and present
+			queueIndex = qfpIndex;
+			break;
+		}
+	}
 
-	assert(graphicsQueueFamilyProperty != queueFamilyProperties.end() && "No graphics queue family found !");
-
-	auto graphicsIndex = static_cast<uint32_t>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
+	if (queueIndex == ~0)
+	{
+		throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
+	}
 
 	// query for Vulkan 1.3 features
 	vk::StructureChain<vk::PhysicalDeviceFeatures2,
@@ -255,7 +271,7 @@ void Vulkan::createLogicalDevice()
 	float queuePriority = 0.5f;
 	vk::DeviceQueueCreateInfo deviceQueueCreateInfo
 	{
-		.queueFamilyIndex = graphicsIndex,
+		.queueFamilyIndex = queueIndex,
 		.queueCount = 1,
 		.pQueuePriorities = &queuePriority
 	};
@@ -269,7 +285,7 @@ void Vulkan::createLogicalDevice()
 	};
 
 	device = vk::raii::Device(physicalDevice, deviceCreateInfo);
-	graphicsQueue = vk::raii::Queue(device, graphicsIndex, 0);
+	graphicsQueue = vk::raii::Queue(device, queueIndex, 0);
 }
 
 
@@ -277,6 +293,7 @@ void Vulkan::initVulkan()
 {
 	createInstance();
 	setupDebugMessenger();
+	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
 }
