@@ -47,6 +47,7 @@ private:
 	static vk::PresentModeKHR chooseSwapPresentMode(std::vector<vk::PresentModeKHR> const& availablePresentModes);
 	vk::Extent2D chooseSwapExtent(vk::SurfaceCapabilitiesKHR const& capabilities);
 	void createSwapChain();
+	void createImageViews();
 
 private:
 	void initWindow();

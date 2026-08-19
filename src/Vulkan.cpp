@@ -380,6 +380,29 @@ void Vulkan::createSwapChain()
 	swapChainImages = swapChain.getImages();
 }
 
+void Vulkan::createImageViews()
+{
+	assert(swapChainImageViews.empty());
+
+	vk::ImageViewCreateInfo imageViewCreateInfo
+	{
+		.viewType = vk::ImageViewType::e2D,
+		.format = swapChainSurfaceFormat.format,
+		.subresourceRange =
+			{
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.levelCount = 1,
+				.layerCount = 1
+			}
+	};
+
+	for (auto& image : swapChainImages)
+	{
+		imageViewCreateInfo.image = image;
+		swapChainImageViews.emplace_back(device, imageViewCreateInfo);
+	}
+}
+
 
 void Vulkan::initVulkan()
 {
@@ -389,6 +412,7 @@ void Vulkan::initVulkan()
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createSwapChain();
+	createImageViews();
 }
 
 void Vulkan::mainLoop()
