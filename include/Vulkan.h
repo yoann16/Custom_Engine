@@ -1,6 +1,8 @@
 #ifndef VULKAN_H
 #define VULKAN_H
 #pragma once
+#include <vector>
+
 
 #include <vulkan/vulkan_raii.hpp>
 
@@ -22,6 +24,11 @@ private:
 	vk::raii::PhysicalDevice physicalDevice = nullptr;
 	vk::raii::Device device = nullptr;
 	vk::raii::Queue graphicsQueue = nullptr;
+	vk::raii::SwapchainKHR swapChain = nullptr;
+	std::vector<vk::Image> swapChainImages;
+	vk::SurfaceFormatKHR swapChainSurfaceFormat;
+	vk::Extent2D swapChainExtent;
+	std::vector<vk::raii::ImageView> swapChainImageViews;
 
 private:
 	void createInstance();
@@ -35,6 +42,11 @@ private:
 	bool isDeviceSuitable(vk::raii::PhysicalDevice const& physicalDevice);
 	void pickPhysicalDevice();
 	void createLogicalDevice();
+	static uint32_t chooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const& surfaceCapabilities);
+	static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(std::vector<vk::SurfaceFormatKHR> const& availableFormats);
+	static vk::PresentModeKHR chooseSwapPresentMode(std::vector<vk::PresentModeKHR> const& availablePresentModes);
+	vk::Extent2D chooseSwapExtent(vk::SurfaceCapabilitiesKHR const& capabilities);
+	void createSwapChain();
 
 private:
 	void initWindow();
